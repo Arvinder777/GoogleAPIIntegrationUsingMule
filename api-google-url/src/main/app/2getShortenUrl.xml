@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+   <!--  <ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy">
+        <managed-store storeName="ShortURLCache" persistent="true" maxEntries="${shorturl.cache.max.entries}" entryTTL="${shorturl.cache.entry.ttl}" expirationInterval="${shorturl.cache.expiration.interval}"/>
+    </ee:object-store-caching-strategy>
+	 -->
+	<flow name="google-shorten-url">
+  
+	    
+	    <set-variable variableName="inputURL" value="${google.long.url}#['zoom=']#[message.inboundProperties['http.query.params'].zoom]#['&amp;size=']#[message.inboundProperties['http.query.params'].size]#['&amp;maptype=']#[message.inboundProperties['http.query.params'].maptype]#['&amp;markers=']${google.map.makers}#[message.inboundProperties['http.query.params'].latitude]#[',']#[message.inboundProperties['http.query.params'].longitude]" doc:name="URLVariable"/>
+
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{"longUrl": flowVars.inputURL}]]></dw:set-payload>
+		 </dw:transform-message>
+        <logger message="outsideCache" level="INFO" doc:name="outsideCache"/>
+        <ee:cache cachingStrategy-ref="Caching_Strategy" doc:name="GoogleURLCache">
+            <logger message="insideCache" level="INFO" doc:name="insideCache"/>
+            <http:request config-ref="GoogleURLShortener" path="${google.shortener.path}" method="POST" doc:name="InvokeGoogleURLShortnerAPI">
+                <http:request-builder>
+                    <http:query-param paramName="key" value="${google.shortener.key}"/>
+                    <http:header headerName="Content-Type" value="application/json"/>
+                </http:request-builder>
+            </http:request>
+            <object-to-string-transformer doc:name="Object to String"/>
+        </ee:cache>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+            
+		<!-- <exception-strategy ref="GoogleURLShortenAPI-apiKitGlobalExceptionMapping"
+			doc:name="Reference Exception Strategy" />
+		 -->	
+			
+	</flow>
+</mule>

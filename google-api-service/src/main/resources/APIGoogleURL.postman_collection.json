@@ -1,0 +1,173 @@
+{
+	"id": "01e1a8ce-57ff-44cf-736b-2372b2be6316",
+	"name": "APIGoogleURL",
+	"description": "Address API for address lookup, distance and search",
+	"order": [
+		"c2b40a4f-e344-70e4-1ac9-eefac20a3a84",
+		"dceca346-dc6f-f59e-e8d0-e4949a6a11bf",
+		"50e6c706-1b21-29c3-2819-7228df89904f"
+	],
+	"folders": [],
+	"timestamp": 1498036331153,
+	"owner": "2109488",
+	"public": false,
+	"requests": [
+		{
+			"id": "50e6c706-1b21-29c3-2819-7228df89904f",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://{{server}}:{{port2}}/esb/{{version}}-{{env}}/qe2",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1498050427076,
+			"name": "QE2Local",
+			"description": "",
+			"collectionId": "01e1a8ce-57ff-44cf-736b-2372b2be6316",
+			"responses": [],
+			"rawModeData": "{\r\n  \"UUID\": \"1234\",\r\n  \"VRN\": \"EX54NSN\",\r\n  \"CrossingDate\":\"2017-6-23T12:00:00+01:00\"\r\n}"
+		},
+		{
+			"id": "c2b40a4f-e344-70e4-1ac9-eefac20a3a84",
+			"headers": "",
+			"headerData": [],
+			"url": "http://127.0.0.1:8094/api/v1-local/shortenurl?latitude=51.526972&longitude=-0.139435&zoom=16&size=600x300&maptype=roadmap&provider=Google",
+			"queryParams": [
+				{
+					"key": "latitude",
+					"value": "51.526972",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "longitude",
+					"value": "-0.139435",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "zoom",
+					"value": "16",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "size",
+					"value": "600x300",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "maptype",
+					"value": "roadmap",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "provider",
+					"value": "Google",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				}
+			],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "GET",
+			"data": null,
+			"dataMode": "params",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1498036914702,
+			"name": "http://127.0.0.1:8084/api/v1-local/address/shortenurl?latitude=51.526972&longitude=-1.139435&provider=Google",
+			"description": "",
+			"collectionId": "01e1a8ce-57ff-44cf-736b-2372b2be6316",
+			"responses": []
+		},
+		{
+			"id": "dceca346-dc6f-f59e-e8d0-e4949a6a11bf",
+			"headers": "",
+			"headerData": [],
+			"url": "http://{{server}}:{{port}}/api/{{version}}-{{env}}/shortenurl?latitude={{latitude}}&longitude=-{{longitude}}&zoom={{zoom}}&size={{size}}&maptype={{maptype}}&provider={{provider}}",
+			"queryParams": [
+				{
+					"key": "latitude",
+					"value": "{{latitude}}",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "longitude",
+					"value": "-{{longitude}}",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "zoom",
+					"value": "{{zoom}}",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "size",
+					"value": "{{size}}",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "maptype",
+					"value": "{{maptype}}",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				},
+				{
+					"key": "provider",
+					"value": "{{provider}}",
+					"equals": true,
+					"description": "",
+					"enabled": true
+				}
+			],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "GET",
+			"data": null,
+			"dataMode": "params",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1498037201869,
+			"name": "Shorten_local",
+			"description": "",
+			"collectionId": "01e1a8ce-57ff-44cf-736b-2372b2be6316",
+			"responses": []
+		}
+	]
+}

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:ftp="http://www.mulesoft.org/schema/mule/ee/ftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd">
+  
+       
+     <sub-flow name="GetShortendURL">
+       
+       
+        <set-variable variableName="requestBuilderMap" doc:name="requestBuilderMap"   value="#[{'latitude':flowVars.latitude,'longitude':flowVars.longitude}]" />
+       
+       
+           <http:request config-ref="HTTP_Request_GoogleShortenAPIService" path="shortenurl" method="GET" doc:name="HTTPGetGoogleURLShortener">
+	            <http:request-builder>
+               <!--  <http:query-param paramName="latitude" value="#[flowVars.latitude]"/> 
+                 <http:query-param paramName="longitude" value="#[flowVars.longitude]"/>
+            
+                -->
+                
+                   <http:query-param paramName="maptype" value="${google.url.api.map.type}"/>
+                <http:query-param paramName="provider" value="${google.url.api.map.provider}"/>
+                <http:query-param paramName="size" value="${google.url.api.map.size}"/>
+                <http:query-param paramName="zoom" value="${google.url.api.map.zoom}"/>
+               
+                  <http:query-params expression="#[flowVars.requestBuilderMap]" />
+                         
+
+	            </http:request-builder>
+	        </http:request>
+
+
+        <set-variable variableName="shortendURL" value="#[json:id]" doc:name="SetShortendURL"/>
+ 
+        
+     </sub-flow>
+     
+    
+    
+        <sub-flow name="GenerateTollID">
+        <set-variable variableName="tollId" value="#[java.util.UUID.randomUUID().toString()]" doc:name="Generate TollId"/>
+    </sub-flow>
+    
+    
+    
+      <sub-flow name="GetLatAndLongitude">
+
+        <db:select config-ref="serviceDB" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT  latitude, longitude 
+			FROM qe2.locations 
+			where id=#[flowVars.originalPayload.UUID]]]></db:parameterized-query>
+
+        </db:select>
+
+
+
+
+
+        <choice doc:name="is there a record?">
+            <when expression="#[payload.size() &gt; 0]">
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+  "result": "OK",
+  "record": payload
+}]]></dw:set-payload>
+
+
+
+
+
+                </dw:transform-message>
+                <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="JSON to Object"/>
+                <set-variable variableName="longitude" value="#[payload.record[0].longitude]" doc:name="longitude"/>
+                <set-variable variableName="latitude" value="#[payload.record[0].latitude]" doc:name="latitude"/>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="ZERO_RESULTS">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"result": "ZERO_RESULTS"
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </otherwise>
+        </choice>
+       <!--  <exception-strategy ref="Global_Exception_Strategy" doc:name="Reference Exception Strategy"/> -->
+    </sub-flow>
+    
+
+ 
+</mule>

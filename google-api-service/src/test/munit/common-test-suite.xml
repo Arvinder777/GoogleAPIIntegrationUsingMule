@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:mock="http://www.mulesoft.org/schema/mule/mock" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd">
+    <munit:config name="munit" doc:name="MUnit configuration"/>
+    <spring:beans>
+        <spring:import resource="classpath:3common.xml"/>
+        <spring:import resource="classpath:4config.xml"/>
+        <spring:import resource="classpath:5error-handler.xml"/>
+    </spring:beans>
+    
+    
+	
+	
+	<scripting:script name="records-found" engine="Groovy" doc:name="Script">
+	<![CDATA[
+	  ArrayList<HashMap<String, String>> obj = new ArrayList<HashMap<String, String>>();
+		  
+			HashMap<String, String> dbResult = new HashMap<String, String>();			
+			dbResult.put("longitude","-0.139435");
+			dbResult.put("latitude","51.526972" );		
+			
+			obj.add(dbResult);
+	         
+	return obj;]]>
+	</scripting:script>   
+	
+	
+	    <scripting:script name="records-not-found" engine="Groovy" doc:name="Script"> 
+	    	<![CDATA[	
+	List<String> lists = new LinkedList<String>();
+	return lists;
+	]]>
+	    </scripting:script> 
+    
+    
+    <munit:test name="GetLatAndLongitudeTest" description="GetLatAndLongitudeTest">
+        <mock:when messageProcessor=".*:.*" doc:name="MockDB">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#[matchContains('Database')]"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[resultOfScript('records-found')]"/>
+           <!--  <mock:then-return payload="#[[getResource('getlatAndLongDBQueryResult.json').asString()]]" mimeType="application/json"/> -->
+        </mock:when>
+        <flow-ref name="GetLatAndLongitude" doc:name="GetLatAndLongitude"/>
+        <munit:assert-on-equals message="Test failure message: Expected payload was not received" expectedValue="#['51.526972']" actualValue="#[flowVars.latitude]" doc:name="Assert Equals For latitude"/>
+        <munit:assert-on-equals message="Test failure message: Expected payload was not received" expectedValue="#['-0.139435']" actualValue="#[flowVars.longitude]" doc:name="Assert Equals For longitude"/>
+    </munit:test>
+    
+    
+     
+     
+     
+      <munit:test name="GetLatAndLongitudeZeroResults" description="GetLatAndLongitudeZeroResults">
+    
+    
+    
+    	<mock:when messageProcessor=".*:.*" doc:name="MockDB">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#[matchContains('Database')]"/>
+            </mock:with-attributes>
+            <!-- <mock:then-return payload="#[[]]" mimeType="application/json"/> -->
+              <mock:then-return payload="#[resultOfScript('records-not-found')]"/>
+		</mock:when>
+		
+    
+         <flow-ref name="GetLatAndLongitude" doc:name="GetLatAndLongitude"/>
+        	  <object-to-string-transformer doc:name="Object to String"/>
+        <munit:assert-on-equals message="Test failure message: Expected payload was not received" expectedValue="#[getResource('expected-zeroresults-response.json').asString().replaceAll('\\s+','')]" actualValue="#[payload.replaceAll('\\s+','')]" doc:name="Assert Equals"/>		
+       
+       
+        
+    </munit:test>
+    
+     
+     
+     
+     
+     
+     
+     
+     
+     
+    <munit:test name="GetShortendURLTest" description="GetShortendURLTest">
+    
+    <mock:when messageProcessor=".*:.*" doc:name="Mock HTTPGetGoogleURLShortener">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#[matchContains('HTTPGetGoogleURLShortener')]"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[[getResource('googleResponse.json').asString()]]" mimeType="application/json"/>
+		</mock:when>
+    
+     <mock:when messageProcessor=".*:.*" doc:name="MockRequestBuilderMapVar">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#[matchContains('requestBuilderMap')]"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[payload]">
+                <mock:invocation-properties>
+                    <mock:invocation-property key="requestBuilderMap" value="{'latitude':'51.526972','longitude':'-0.139435'}"/>
+                </mock:invocation-properties>
+            </mock:then-return>
+        </mock:when>
+    
+    
+        <flow-ref name="GetShortendURL" doc:name="GetShortendURL"/>
+        <object-to-string-transformer doc:name="Object to String"/>
+        
+         <munit:assert-on-equals message="Test failure message: Expected payload was not received" expectedValue="#['['+getResource('googleResponse.json').asString().replaceAll('\\s+','')+']']" actualValue="#[payload.replaceAll('\\s+','')]" doc:name="Assert Equals"/>
+			
+        
+        
+    </munit:test>
+</mule>

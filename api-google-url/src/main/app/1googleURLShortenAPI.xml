@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+    <apikit:config name="GoogleURLShortenAPI-config" raml="GoogleURLShortenAPI.raml" consoleEnabled="false" doc:name="Router"/>
+    <flow name="GoogleURLShortenAPI-main">
+        <http:listener config-ref="api-httpListenerConfig" path="/api/${api.address.version}/*" doc:name="HTTP"/>
+        <apikit:router config-ref="GoogleURLShortenAPI-config" doc:name="APIkit Router"/>
+        <exception-strategy ref="GoogleURLShortenAPI-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy"/> 
+    </flow>
+    <flow name="GoogleURLShortenAPI-console">
+        <http:listener config-ref="api-httpListenerConfig" path="/console/*" doc:name="HTTP"/>
+        <apikit:console config-ref="GoogleURLShortenAPI-config" doc:name="APIkit Console"/>
+    </flow>
+    <flow name="get:/shortenurl:GoogleURLShortenAPI-config">
+      <flow-ref name="google-shorten-url" doc:name="google-shorten-url"/>
+       <!--  <set-payload value="{&#xA;  &quot;kind&quot;: &quot;urlshortener#url&quot;,&#xA;  &quot;id&quot;: &quot;https://goo.gl/fbsS&quot;,&#xA;  &quot;longUrl&quot;: &quot;http://www.google.com/&quot;&#xA;}" doc:name="Set Payload"/> -->
+    </flow>
+
+</mule>

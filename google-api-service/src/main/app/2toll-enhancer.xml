@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+   
+    <flow name="qe2Flow">
+        <http:listener config-ref="QE2Service_HTTP_Listener" path="/" doc:name="HTTP" allowedMethods="POST"/>
+          <dw:transform-message doc:name="originalPayload var">                     
+                 
+    <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+
+				            <dw:set-variable variableName="originalPayload"><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-variable>
+				        </dw:transform-message>
+        <flow-ref name="GetLatAndLongitude" doc:name="GetLatAndLongitude"/>
+        <flow-ref name="GetShortendURL" doc:name="GetShortendURL"/>
+        <flow-ref name="GenerateTollID" doc:name="GenerateTollID"/>
+        
+        	
+						<dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+%function isNotEmpty(element) element != null and element != ""
+%function validateDate(date) date contains /^(\d{4})(-(\d{2}))(-(\d{2}))(T(\d{2}):(\d{2}))$/
+---
+{
+  "UUID": flowVars.originalPayload.UUID,
+  "TollID": flowVars.tollId,
+  "VRN": flowVars.originalPayload.VRN, 
+   "CrossingDate":flowVars.originalPayload.CrossingDate when (isNotEmpty(flowVars.originalPayload.CrossingDate) and validateDate(flowVars.originalPayload.CrossingDate)) otherwise p("crossing.default.date"),
+  "InboundQ": p("toll.inbound.queue"),
+  "JourneyDetails":{
+  	 "longitude": flowVars.longitude,
+  	 "latitude" : flowVars.latitude,
+  	 "url":flowVars.shortendURL
+  }
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <object-to-string-transformer doc:name="Object to String"/>
+        <logger message="#[payload]" level="INFO" doc:name="Transformed JSON Message"/>
+        
+        
+          <set-payload value="#['ACK']" doc:name="Set Payload"/>
+         <parse-template location="templates/TollResponseWrapper.xml" doc:name="TollResponseWrapper Template"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        
+        
+        <exception-strategy ref="Global_Exception_Strategy" doc:name="Reference Exception Strategy"/> 
+        
+        
+        
+    </flow>
+    
+        
+    
+</mule>

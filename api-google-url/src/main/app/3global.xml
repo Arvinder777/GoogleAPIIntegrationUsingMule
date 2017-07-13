@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:ws="http://www.mulesoft.org/schema/mule/ws"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ws http://www.mulesoft.org/schema/mule/ws/current/mule-ws.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd">
+
+	<context:property-placeholder location="${mule.env}.properties" />
+	
+	<http:listener-config name="api-httpListenerConfig"
+		host="0.0.0.0" port="${api.port}" doc:name="HTTP Listener Configuration" />
+	
+	<http:request-config name="GoogleURLShortener"
+			protocol="HTTPS" host="${google.shortener.host}" port="${google.shortener.port}" 	doc:name="HTTP Request Configuration" />
+   
+	 <ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy">
+        <managed-store storeName="ShortURLCache" persistent="true" maxEntries="${shorturl.cache.max.entries}" entryTTL="${shorturl.cache.entry.ttl}" expirationInterval="${shorturl.cache.expiration.interval}"/>
+    </ee:object-store-caching-strategy>
+	
+	
+    
+    <choice-exception-strategy name="GoogleURLShortenAPI-apiKitGlobalExceptionMapping">
+		<catch-exception-strategy doc:name="404"
+			when="#[exception.causedBy(org.mule.module.apikit.exception.NotFoundException)]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="404" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [400] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO"  doc:name="Logger" />
+
+			<set-payload
+				value="{&quot;status&quot;:404,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;Invalid or unknown endpoint URI&quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="405"
+			when="#[exception.causedBy(org.mule.module.apikit.exception.MethodNotAllowedException)]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="405" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [405] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO"  doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:405,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;Invalid HTTP Method&quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="415"
+			when="#[exception.causedBy(org.mule.module.apikit.exception.UnsupportedMediaTypeException)]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="415" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [415] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO"  doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:415,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;Unsupported media type&quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="406"
+			when="#[exception.causedBy(org.mule.module.apikit.exception.NotAcceptableException)]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="406" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [406] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO"  doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:406,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;Not acceptable&quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="401"
+			when="#[ exception.causedBy(org.mule.module.apikit.exception.InvalidHeaderException) || (exception.cause != empty &amp;&amp;exception.cause.toString().contains(&quot;'authorization'&quot;))]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="401" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [401] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO" category="com.addisonlee.Logger" doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:401,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;Invalid Authorization header&quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="400"
+			when="#[exception.causedBy(org.mule.module.apikit.exception.InvalidFormParameterException) || exception.causedBy(org.mule.module.apikit.exception.InvalidQueryParameterException)]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="400" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [400] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO"  doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:400,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;#[exception.cause.message]&quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="400 JSON"
+			when="#[exception.causedBy(org.codehaus.jackson.JsonParseException)]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="400" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [400] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO"  doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:400,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;Invalid data types in json request. &quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="Custom 400"
+			when="#[exception.causedBy(javax.script.ScriptException)]">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="400" />
+			</message-properties-transformer>
+			<logger
+				message="[#[message.id]] [#[flow.name]] [400] [#[exception.detailedMessage]] [#[payload]]"
+				level="ERROR" category="com.qe2.Logger" doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:400,&quot;code&quot;:&quot;USR&quot;,&quot;message&quot;:&quot;#[(org.mule.util.ExceptionUtils.getRootCauseMessage(exception)).substring(11)]&quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+		<catch-exception-strategy doc:name="500">
+			<message-properties-transformer
+				overwrite="true" doc:name="Message Properties">
+				<add-message-property key="Content-Type" value="application/json" />
+				<add-message-property key="http.status" value="500" />
+			</message-properties-transformer>
+			<logger level="INFO" doc:name="Logger" />
+			<logger
+				message="[#[message.id]] [#[flow.name]] [500] [#[exception.detailedMessage]] [#[payload]]"
+				level="INFO" category="com.qe2.Logger" doc:name="Logger" />
+			<set-payload
+				value="{&quot;status&quot;:500,&quot;code&quot;:&quot;SYS&quot;,&quot;message&quot;:&quot;Internal Server Error &quot;,&quot;reference_id&quot;:&quot;#[message.id]&quot;}"
+				doc:name="Set Payload" />
+		</catch-exception-strategy>
+	</choice-exception-strategy>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ 	
+</mule>

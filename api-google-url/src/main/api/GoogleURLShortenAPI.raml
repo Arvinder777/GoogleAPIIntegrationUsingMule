@@ -1,0 +1,52 @@
+#%RAML 0.8
+title: Address API
+version: v1-dev
+#baseUri: http://localhost:8094/addressshortener
+baseUri: http://mocksvc.mulesoft.com/mocks/8894ac7c-2b2b-4869-96ab-2ff23b7ca008/addressshortener
+/shortenurl:
+  displayName: ShortenURL
+  get:
+    queryParameters:
+      latitude:
+        description: The latitude of the location
+        type: string
+        example: 51.526972
+        required: true
+      longitude:
+        description: The longitude of the location
+        type: string
+        example: -0.139435
+        required: true     
+      zoom:
+        description: The zoom of the map
+        type: string
+        example: 16
+        required: true  
+      size:
+        description: The size of the map
+        type: string
+        example: 600x300
+        required: true   
+      maptype:
+        description: The map type
+        type: string
+        example: roadmap
+        required: true        
+      provider:
+        description: The backend service to use for requesting the shorten url
+        default: Google
+        required: false
+        example: Google
+        type: string
+       
+    description: Get an shorten url from lat, long, zoom, size, maptype
+    responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "kind": "urlshortener#url",
+                  "id": "https://goo.gl/fbsS",
+                  "longUrl": "http://www.google.com/"
+                }
