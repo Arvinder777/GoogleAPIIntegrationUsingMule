@@ -15,7 +15,7 @@ And converts this long url into the short url using the GoogleAPI URL shortener.
 Mule components
 ---------
 1.	Dataweave
-2.  	APIKIT router
+2. 	APIKIT router
 3.	Context property place folders
 4.	AMQP {Rabbit MQ}
 5.	Ehcache
@@ -23,7 +23,7 @@ Mule components
 7.	Object-to-string-transformer
 8.	Http post
 9.	Parse template
-10.  	Exception Strategies
+10. Exception Strategies
 
 
 
